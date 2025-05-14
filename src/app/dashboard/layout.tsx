@@ -14,7 +14,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [isLoaded, isSignedIn, router]);
 
-  // Show simplified loading state
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -23,7 +22,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  // Show unauthorized message if loaded but not signed in
   if (!isSignedIn) {
     return null; // Return nothing as we're redirecting
   }

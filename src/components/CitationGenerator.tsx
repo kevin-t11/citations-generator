@@ -13,13 +13,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { CitationRequestData } from '@/types/citation';
@@ -27,17 +20,7 @@ import { SignInButton, useAuth } from '@clerk/nextjs';
 import { Copy, Download, FileText, FileUp, Link as LinkIcon } from 'lucide-react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-
-// Citation format options
-const citationFormats = [
-  { value: 'apa', label: 'APA - 7th Edition' },
-  { value: 'mla', label: 'MLA - 9th Edition' },
-  { value: 'chicago', label: 'Chicago - 17th Edition' },
-  { value: 'harvard', label: 'Harvard' },
-  { value: 'ieee', label: 'IEEE' },
-  { value: 'ama', label: 'AMA' },
-  { value: 'asa', label: 'ASA' },
-];
+import CslStyleSelector from './CslStyleSelector';
 
 export default function CitationGenerator() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -57,14 +40,12 @@ export default function CitationGenerator() {
     additionalInfo: '',
   });
 
-  // Handle file input change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       setFileInput(e.target.files[0]);
     }
   };
 
-  // Handle manual input change
   const handleManualInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -100,7 +81,6 @@ export default function CitationGenerator() {
     setGeneratedCitation('');
 
     try {
-      // Base request data
       let requestData: CitationRequestData = {
         format,
         sourceType: activeTab,
@@ -114,11 +94,11 @@ export default function CitationGenerator() {
           const { fileId, fileName, metadata } = await uploadAndProcessFile(fileInput);
           requestData = {
             ...requestData,
-            sourceUrl: fileId,
+            fileId, // Store the fileId separately
             title: metadata?.title || fileName.replace(/\.[^/.]+$/, ''),
             authors: metadata?.authors || '',
             year: metadata?.year || '',
-            source: metadata?.source || '',
+            source: metadata?.source || 'Journal Article', // Default source type
             additionalInfo: metadata?.additionalInfo || '',
           };
         } catch {
@@ -142,7 +122,6 @@ export default function CitationGenerator() {
     }
   };
 
-  // Copy citation to clipboard
   const handleCopyCitation = () => {
     if (!generatedCitation) return;
 
@@ -152,7 +131,6 @@ export default function CitationGenerator() {
       .catch(() => toast.error('Failed to copy citation'));
   };
 
-  // Download citation
   const handleDownloadCitation = () => {
     if (!generatedCitation) return;
 
@@ -166,7 +144,6 @@ export default function CitationGenerator() {
     toast.success('Citation downloaded');
   };
 
-  // Loading state
   if (!isLoaded) {
     return <div className="flex items-center justify-center min-h-[300px]">Loading...</div>;
   }
@@ -192,21 +169,7 @@ export default function CitationGenerator() {
 
             <CardContent>
               <div className="mb-6">
-                <Label htmlFor="citation-format" className="mb-2">
-                  Citation Format
-                </Label>
-                <Select value={format} onValueChange={setFormat}>
-                  <SelectTrigger id="citation-format" className="w-full">
-                    <SelectValue placeholder="Select format" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {citationFormats.map((format) => (
-                      <SelectItem key={format.value} value={format.value}>
-                        {format.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CslStyleSelector value={format} onValueChange={setFormat} />
               </div>
 
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

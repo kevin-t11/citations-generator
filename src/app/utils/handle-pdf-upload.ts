@@ -33,16 +33,13 @@ async function parseResponse(response: Response): Promise<UploadResponse> {
     throw new Error('Server returned an error page');
   }
 
-  // Parse response as JSON
   try {
     const data = JSON.parse(responseText);
 
-    // Check for API errors
     if (!response.ok) {
       throw new Error(data?.error || `Server error (${response.status})`);
     }
 
-    // Validate success response
     if (!data || !data.success || !data.fileId) {
       throw new Error('Invalid server response');
     }
@@ -61,7 +58,6 @@ export async function uploadAndProcessFile(file: File): Promise<{
   try {
     validateFile(file);
 
-    // Create form data for the upload
     const formData = new FormData();
     formData.append('file', file);
 
@@ -70,10 +66,8 @@ export async function uploadAndProcessFile(file: File): Promise<{
       body: formData,
     });
 
-    // Parse and validate the server response
     const data = await parseResponse(response);
 
-    // Prepare return value
     return {
       fileId: data.fileId,
       fileName: data.fileName || file.name,

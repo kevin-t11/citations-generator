@@ -4,7 +4,6 @@ import pdfParse from 'pdf-parse';
 // Specify Node.js runtime
 export const runtime = 'nodejs';
 
-// Define types for PDF data
 interface PDFInfo {
   Title?: string;
   Author?: string;
@@ -25,7 +24,6 @@ interface PDFData {
  */
 async function extractPDFText(buffer: Buffer): Promise<PDFData> {
   try {
-    // Parse PDF with basic settings
     const data = await pdfParse(buffer, {
       max: 10, // Parse first 10 pages for better metadata extraction
       version: 'default',
@@ -44,13 +42,11 @@ async function extractPDFText(buffer: Buffer): Promise<PDFData> {
  * Extract title from PDF data
  */
 function extractTitle(pdfText: string, pdfInfo: PDFInfo): string {
-  // First try to get from PDF metadata
   if (pdfInfo?.Title) {
     const title = String(pdfInfo.Title).trim();
     if (title) return title;
   }
 
-  // If no title in metadata, extract from content
   const lines = pdfText
     .split('\n')
     .map((line) => line.trim())
@@ -146,13 +142,11 @@ function extractSource(pdfText: string, pdfInfo: PDFInfo): string | undefined {
 function extractAdditionalInfo(pdfText: string): string | undefined {
   const firstPageText = pdfText.split('\n').slice(0, 50).join(' ');
 
-  // Extract publication details using regex
   const volumeMatch = firstPageText.match(/vol(?:ume)?\.?\s*(\d+)/i);
   const issueMatch = firstPageText.match(/(?:no|issue|num)\.?\s*(\d+)/i);
   const pagesMatch = firstPageText.match(/pages?\s*(\d+)[\s-–—]*(\d+)/i);
   const doiMatch = firstPageText.match(/doi:?\s*([^\s]+)/i);
 
-  // Combine extracted information
   const parts = [];
 
   if (volumeMatch) parts.push(`Volume ${volumeMatch[1]}`);
@@ -168,7 +162,6 @@ function extractAdditionalInfo(pdfText: string): string | undefined {
  */
 export async function extractPDFMetadata(pdfData: ArrayBuffer): Promise<PDFMetadata> {
   try {
-    // Validate input
     if (!pdfData || pdfData.byteLength === 0) {
       throw new Error('Empty PDF data provided');
     }
@@ -178,11 +171,8 @@ export async function extractPDFMetadata(pdfData: ArrayBuffer): Promise<PDFMetad
     if (buffer.length === 0) {
       throw new Error('PDF buffer conversion failed');
     }
-
-    // Extract text content
     const { text, info } = await extractPDFText(buffer);
 
-    // Build metadata object
     return {
       title: extractTitle(text, info),
       authors: extractAuthors(text, info),
@@ -191,7 +181,6 @@ export async function extractPDFMetadata(pdfData: ArrayBuffer): Promise<PDFMetad
       additionalInfo: extractAdditionalInfo(text),
     };
   } catch {
-    // Return basic metadata to not break the citation generation
     return {
       title: 'Error Processing PDF',
       authors: 'Unknown Author',

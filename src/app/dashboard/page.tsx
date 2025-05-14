@@ -10,7 +10,6 @@ import { useEffect, useState } from 'react';
 export default function DashboardPage() {
   const searchParams = useSearchParams();
 
-  // Get tab from URL query parameter or default to 'generate'
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabFromUrl === 'citations' ? 'citations' : 'generate');
 
@@ -23,7 +22,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const handleStorageChange = () => {
-      // If a new citation is added, switch to the list tab
       const savedCitations = localStorage.getItem('citations');
       if (savedCitations && JSON.parse(savedCitations).length > 0) {
         setActiveTab('citations');
@@ -36,7 +34,23 @@ export default function DashboardPage() {
 
     // Set up listener for CitationGenerator adding citations
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleURLChange = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab && (tab === 'generate' || tab === 'citations')) {
+        setActiveTab(tab);
+      }
+    };
+
+    window.addEventListener('popstate', handleURLChange);
+    return () => window.removeEventListener('popstate', handleURLChange);
   }, []);
 
   return (

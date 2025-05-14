@@ -20,7 +20,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, ExternalLink, Pencil, X } from 'lucide-react';
+import { Copy, ExternalLink, FileText, Pencil, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -52,7 +52,6 @@ export default function CitationsList() {
   });
 
   useEffect(() => {
-    // Load citations from localStorage
     const savedCitations = localStorage.getItem('citations');
     if (savedCitations) {
       setCitations(JSON.parse(savedCitations));
@@ -137,7 +136,22 @@ export default function CitationsList() {
   };
 
   if (citations.length === 0) {
-    return null;
+    return (
+      <div className="container mx-auto px-4 py-10">
+        <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-sm border border-gray-100">
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <FileText className="h-16 w-16 text-citation-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-citation-700 mb-2">No Saved Citations</h2>
+            <p className="text-gray-500 max-w-md mx-auto">
+              You haven&apos;t generated any citations yet. Use the generator tab to create your
+              first citation.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

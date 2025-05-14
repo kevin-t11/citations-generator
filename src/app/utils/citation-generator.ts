@@ -229,7 +229,6 @@ export function generateCitation(data: CitationRequestData): string {
     if (format === 'mla') {
       citation += `${data.source}`;
 
-      // Add volume/issue
       if (meta.volume) citation += `, vol. ${meta.volume}`;
       if (meta.issue) citation += `, no. ${meta.issue}`;
 

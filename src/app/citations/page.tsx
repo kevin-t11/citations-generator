@@ -20,13 +20,13 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, ExternalLink, Pencil, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Copy, ExternalLink, FileText, Pencil, PlusCircle, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface Citation {
   id: string;
+  fileId?: string;
   citation: string;
   format: string;
   sourceType: string;
@@ -51,35 +51,35 @@ export default function CitationsPage() {
     additionalInfo: '',
     sourceUrl: '',
   });
-  const router = useRouter();
 
   useEffect(() => {
-    // Retrieve citations from localStorage on component mount
     const savedCitations = localStorage.getItem('citations');
     if (savedCitations) {
       setCitations(JSON.parse(savedCitations));
-    } else {
-      // If no citations are found, redirect to the homepage
-      router.push('/');
     }
-  }, [router]);
+  }, []);
 
   const handleCopyCitation = (citation: string) => {
     navigator.clipboard
       .writeText(citation)
       .then(() => {
-        toast.success('Citation copied to clipboard', {
-          className: 'bg-citation-50 border-citation-200 text-citation-900',
-        });
+        toast.success('Citation copied to clipboard');
       })
       .catch(() => {
         toast.error('Failed to copy citation');
       });
   };
 
-  const handleOpenSource = (sourceUrl?: string) => {
-    if (sourceUrl) {
-      window.open(sourceUrl, '_blank', 'noopener,noreferrer');
+  const handleOpenSource = (citation: Citation) => {
+    if (citation.sourceType === 'url' && citation.sourceUrl) {
+      // For URLs, open in a new tab
+      window.open(citation.sourceUrl, '_blank', 'noopener,noreferrer');
+    } else if (citation.sourceType === 'pdf' && citation.fileId) {
+      // For PDFs, show a notification with the file ID
+      toast.info(`PDF Reference ID: ${citation.fileId}`, {
+        description: 'In a production app, this would open the PDF from storage.',
+        duration: 5000,
+      });
     }
   };
 
@@ -121,9 +121,7 @@ export default function CitationsPage() {
     setIsEditing(false);
     setCurrentCitation(null);
 
-    toast.success('Citation updated successfully', {
-      className: 'bg-citation-50 border-citation-200 text-citation-900',
-    });
+    toast.success('Citation updated successfully');
   };
 
   const handleRemoveCitation = (id: string) => {
@@ -131,14 +129,7 @@ export default function CitationsPage() {
     setCitations(updatedCitations);
     localStorage.setItem('citations', JSON.stringify(updatedCitations));
 
-    toast.success('Citation removed', {
-      className: 'bg-citation-50 border-citation-200 text-citation-900',
-    });
-
-    if (updatedCitations.length === 0) {
-      // If no citations left, redirect to homepage
-      router.push('/');
-    }
+    toast.success('Citation removed');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -148,21 +139,33 @@ export default function CitationsPage() {
 
   if (citations.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-lg">
-          <CardHeader>
-            <CardTitle>No Citations Found</CardTitle>
-            <CardDescription>Generate a citation to get started</CardDescription>
-          </CardHeader>
-          <CardFooter>
+      <div className="container mx-auto px-4 py-10">
+        <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-sm border border-gray-100">
+          <div className="text-center mb-6">
+            <div className="flex justify-center mb-4">
+              <FileText className="h-16 w-16 text-citation-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-citation-700 mb-2">No Saved Citations</h2>
+            <p className="text-gray-500 max-w-md mx-auto mb-6">
+              You haven&apos;t generated any citations yet. Create your first citation to get
+              started.
+            </p>
             <Button
-              className="w-full bg-citation-500 hover:bg-citation-700 text-white"
-              onClick={() => router.push('/')}
+              onClick={() => {
+                // Update URL to switch tab to generate
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', 'generate');
+                window.history.pushState({}, '', url);
+                // Trigger tab change event
+                window.dispatchEvent(new Event('storage'));
+              }}
+              className="bg-citation-500 hover:bg-citation-700 text-white"
             >
-              Go to Citation Generator
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Create New Citation
             </Button>
-          </CardFooter>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
@@ -178,10 +181,7 @@ export default function CitationsPage() {
 
       <div className="grid gap-6">
         {citations.map((citation) => (
-          <Card
-            key={citation.id || Math.random().toString()}
-            className="border-citation-200 shadow-md bg-[#fdf7f8]"
-          >
+          <Card key={citation.id} className="border-citation-200 shadow-md bg-[#fdf7f8]">
             <CardHeader className="pb-2 flex flex-row items-start justify-between">
               <div>
                 <CardTitle className="text-lg text-citation-700">
@@ -215,13 +215,12 @@ export default function CitationsPage() {
                 >
                   <Pencil className="h-4 w-4 mr-1" /> Edit
                 </Button>
-                {citation.sourceUrl && (
+                {(citation.sourceUrl || (citation.sourceType === 'pdf' && citation.fileId)) && (
                   <Button
-                    key="source-url-button"
                     variant="outline"
                     size="sm"
                     className="text-citation-600 border-citation-200 hover:bg-citation-50"
-                    onClick={() => handleOpenSource(citation.sourceUrl)}
+                    onClick={() => handleOpenSource(citation)}
                   >
                     <ExternalLink className="h-4 w-4 mr-1" /> Open
                   </Button>

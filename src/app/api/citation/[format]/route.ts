@@ -1,20 +1,12 @@
-import {
-  generateAMACitation,
-  generateAPACitation,
-  generateASACitation,
-  generateChicagoCitation,
-  generateHarvardCitation,
-  generateIEEECitation,
-  generateMLACitation,
-} from '@/app/utils/citation-generator';
 import { fetchWebsiteMetadata } from '@/app/utils/website-parser';
+import { generateCslCitation } from '@/lib/csl-citation-generator';
 import { Citation, CitationRequestData } from '@/types/citation';
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest, { params }: { params: { format: string } }) {
   try {
-    const format = params.format;
+    const { format } = params;
     const data: CitationRequestData = await request.json();
 
     if (!format || !data.sourceType) {
@@ -31,37 +23,34 @@ export async function POST(request: NextRequest, { params }: { params: { format:
           ...citationData,
           ...metadata,
         };
-      } catch {
+      } catch (error) {
+        console.error('Error fetching website metadata:', error);
         // Continue with user-provided data if metadata fetch fails
       }
     }
 
-    // Generate citation based on format
-    let citation: string;
-    switch (format) {
-      case 'apa':
-        citation = generateAPACitation(citationData);
-        break;
-      case 'mla':
-        citation = generateMLACitation(citationData);
-        break;
-      case 'chicago':
-        citation = generateChicagoCitation(citationData);
-        break;
-      case 'harvard':
-        citation = generateHarvardCitation(citationData);
-        break;
-      case 'ieee':
-        citation = generateIEEECitation(citationData);
-        break;
-      case 'ama':
-        citation = generateAMACitation(citationData);
-        break;
-      case 'asa':
-        citation = generateASACitation(citationData);
-        break;
-      default:
-        return NextResponse.json({ error: 'Unsupported citation format' }, { status: 400 });
+    // Generate citation using CSL (Citation Style Language)
+    let citation;
+    try {
+      citation = await generateCslCitation({
+        ...citationData,
+        format,
+      });
+    } catch (error) {
+      console.error('Error in CSL citation generation:', error);
+      // If CSL citation generation fails, create a basic citation
+      const { authors, year, title, source } = citationData;
+      citation =
+        [
+          authors,
+          year ? `(${year})` : '',
+          title ? `"${title}"` : '',
+          source || '',
+          data.sourceUrl || '',
+        ]
+          .filter(Boolean)
+          .join('. ')
+          .replace(/\.{2,}/g, '.') + '.';
     }
 
     const response: Citation = {
@@ -69,7 +58,8 @@ export async function POST(request: NextRequest, { params }: { params: { format:
       citation,
       format,
       sourceType: data.sourceType,
-      sourceUrl: data.sourceUrl,
+      sourceUrl: data.sourceType === 'url' ? data.sourceUrl : undefined,
+      fileId: data.sourceType === 'pdf' ? data.fileId : undefined,
       title: citationData.title,
       authors: citationData.authors,
       year: citationData.year,
@@ -79,6 +69,7 @@ export async function POST(request: NextRequest, { params }: { params: { format:
 
     return NextResponse.json(response);
   } catch (error) {
+    console.error('API route error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to generate citation';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }

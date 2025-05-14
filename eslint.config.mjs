@@ -1,7 +1,7 @@
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { FlatCompat } from '@eslint/eslintrc';
 import eslintPluginPrettier from 'eslint-plugin-prettier';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,7 +20,6 @@ const eslintConfig = [
       'prettier/prettier': 'error',
       'no-unused-vars': 'error',
       'no-undef': 'error',
-      'no-console': 'warn',
       'import/no-unresolved': 'off',
     },
   },

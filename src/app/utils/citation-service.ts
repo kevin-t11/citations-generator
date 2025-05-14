@@ -46,7 +46,9 @@ export async function generateCitation(data: CitationRequestData): Promise<Citat
       citation: result.citation,
       format: data.format,
       sourceType: data.sourceType,
-      sourceUrl: data.sourceUrl,
+      // For PDFs, use fileId instead of sourceUrl
+      fileId: data.sourceType === 'pdf' ? data.fileId : undefined,
+      sourceUrl: data.sourceType === 'url' ? data.sourceUrl : undefined,
       title: result.title || data.title,
       authors: result.authors || data.authors,
       year: result.year || data.year,
